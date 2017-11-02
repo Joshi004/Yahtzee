@@ -106,7 +106,7 @@ int i=0;
 x=cover[i][j-1].getX()+cover[i][j-1].getWidth();
 double width=3*coverW/playerName.length;
 
-score[i][j]=new GLabel("Naresh is me",x,y);
+score[i][j]=new GLabel("",x,y);
 score[i][j].setColor(Color.BLUE);
 score[i][j].sendToFront();
 score[i][j].setFont("Serif-20");
@@ -129,7 +129,7 @@ for(int j=1;j<playerName.length+1;j++)
 	y=score[i][j-1].getY();
 	double width=3*coverW/playerName.length;		//Window/6 is default lnegth choosen for first column and score will extend only to 3 times of it and will be decided by the number of players
 
-	score[i][j]=new GLabel("10",x,y);
+	score[i][j]=new GLabel("00",x,y);
 	score[i][j].setColor(Color.BLUE);
 	score[i][j].sendToFront();
 	score[i][j].setFont("Serif-20");
@@ -165,15 +165,15 @@ score[6][0].setLabel("Sixes");
 
 score[7][0].setLabel("UPPER SCORE");
 score[7][0].setLocation(score[7][0].getX()-40, score[7][0].getY());
-score[8][0].setLabel("UPPER BONUS (35)");
+score[8][0].setLabel("UPPER BONUS	  (35)");
 score[8][0].setLocation(score[8][0].getX()-40, score[8][0].getY());
 
 score[9][0].setLabel("Three Of A Kind");
 score[10][0].setLabel("Four Of A Kind");
-score[11][0].setLabel("Full House (25)");
+score[11][0].setLabel("Full House	  (25)");
 score[12][0].setLabel("Small Straight (30)");
 score[13][0].setLabel("Large Straight (40)");
-score[14][0].setLabel("Yahtzee ! (50)");
+score[14][0].setLabel("Yahtzee ! 	  (50)");
 score[15][0].setLabel("Chance");
 
 score[16][0].setLabel("LOWER SCORE");
@@ -181,9 +181,20 @@ score[16][0].setLocation(score[16][0].getX()-40, score[16][0].getY());
 score[17][0].setLabel("TOTAL SCORE");
 score[17][0].setLocation(score[17][0].getX()-40, score[17][0].getY());
 
-
-
-
+// Colouring the special rows 
+for(int k=0;k<1;k++)// This loop is constructed so that aar scope ends with this loop only othewise it would exist as long as the setup function works
+{
+int arr[]= {0,7,8,16,17};
+for(int i:arr)
+{
+	for(int j=0;j<playerName.length+1;j++)
+{
+cover[i][j].setFilled(true);
+cover[i][j].setFillColor(Color.blue);
+score[i][j].sendToFront();
+score[i][j].setColor(Color.WHITE);
+score[i][j].setFont("Serif-20-BOLD");
+}}}
 
 return 1;
 }
@@ -191,20 +202,36 @@ return 1;
 private String[] userInfo()
 {
 	// Entering player Data number and names
-	int playerNum; // \must lie from 1-4
+	int playerNum=261151; // \must lie from 1-4
 	while(true)
 	{
 	String msg="Please Enter number of players";
+	try
+	{
 	playerNum=Integer.parseInt(JOptionPane.showInputDialog(null,msg));
-	if(playerNum>0 && playerNum<5)
+	}
+	catch(Exception e)
+	{
+		
+	}
+	if(playerNum>=2 && playerNum<5)
 		break;
-	JOptionPane.showMessageDialog(null, "Try again with valid values between 1 to 4", "Error", JOptionPane.PLAIN_MESSAGE, null);
+	else if(playerNum==261151)
+		JOptionPane.showMessageDialog(null, "Please Enter a valid integer value", "Error", JOptionPane.PLAIN_MESSAGE, null);
+	else if(playerNum<2)
+	JOptionPane.showMessageDialog(null, "This game cant be played with less than two players", "Error", JOptionPane.PLAIN_MESSAGE, null);
+	else if(playerNum>=5)
+	JOptionPane.showMessageDialog(null, "This game cant be played with more than four players", "Error", JOptionPane.PLAIN_MESSAGE, null);
+	
+	//else if()	
 	}
 	String playerName[]=new String[playerNum];
 
 	for(int i=0;i<playerNum;i++)
 	{
 	playerName[i]=JOptionPane.showInputDialog(null,"Enter name : "+(i+1));
+	if(playerName[i].length() > 60/playerNum)
+	playerName[i]=playerName[i].substring(0,60/playerNum);
 	}
 
 return playerName;	
