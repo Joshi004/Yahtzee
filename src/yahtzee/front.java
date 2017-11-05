@@ -1,3 +1,5 @@
+//wORK on ASSIGNsCORE
+
 package yahtzee;
 import java.util.*;
 import java.awt.*;
@@ -13,12 +15,22 @@ import acm.util.*;
 
 public class front extends GraphicsProgram
 {
+
 	
+GLabel info,selectNum,remaining;
 GImage dice[]=new GImage[5];
-GImage diceRaw[]=new GImage[7];
+GImage diceRaw[][]=new GImage[5][7];
+GImage rollButton;
+GObject selected=null;
 
 int windowH=640,windowW=1340;
-	
+double diceDim=windowW/20;	
+double leftMargin=diceDim;
+double upMargin=2*diceDim; // Howevr upMargin for dice is 2*diceDim/1.25
+boolean rolling=false; // Indicates thta roll button is clicked
+boolean moving=false;  // indicates that move dice is initisated
+int dx=2,dy=0;
+
 public void run()
 {
 Scanner input=new Scanner(System.in);
@@ -27,12 +39,47 @@ Scanner input=new Scanner(System.in);
 this.setSize(windowW,windowH);
 this.setBackground(Color.green);
 
+
+
 String playerName[]=userInfo();
-int diceNum[] = new int[5]; 
+//int diceNum[] = new int[5]; 
 GLabel score[][]=new GLabel[18][playerName.length+1];
 GRect cover[][]=new GRect[18][playerName.length+1];
 
 setup(playerName,score,cover);
+for(int player=0;player<playerName.length;player++)
+{
+	JOptionPane.showMessageDialog(null,playerName[player]+" : Its Your Roll");
+	int rollNum=1;
+
+while(rollNum<=3)
+{
+
+	
+if(rolling)
+{
+rollnSelect(rollNum);
+rollNum++;
+}
+
+if(moving && rollNum>1)
+moveDice();
+else if(rollNum==1)
+moving=false; // If this is not done At every players first turn if dice is selected before roll button then roll button wont work
+
+if(rollNum==1)
+	{
+	info.setLabel("Press ROLL to roll all dices");
+	selectNum.setLabel("SELECTION DISABLED");
+	}
+else
+	info.setLabel("Select the dices and press ROLL button");
+
+remaining.setLabel("	Rolls Remaining : "+(4-rollNum));
+}// while loop
+JOptionPane.showMessageDialog(null,"Well Played : "+playerName[player]);
+}// PLayer loop	
+
 /*
 rollDice();
 selectDice();
@@ -43,30 +90,70 @@ assignScore();
 	
 }// Main ends 	
 
+
+
 private int setup(String playerName[],GLabel score[][],GRect cover[][])
 {
-diceRaw[0]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/0.png");
-diceRaw[1]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/1.png");
-diceRaw[2]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/2.png");
-diceRaw[3]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/3.png");
-diceRaw[4]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/4.png");
-diceRaw[5]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/5.png");
-diceRaw[6]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/6.png");
+	GImage heading = new GImage("file:///E:/work_space/JAVA/yahtzee/images/yahtzee.png",0,0);
+	heading.scale(1.5,.7);
+	//heading.setColor(Color.red);
+	add(heading,this.getWidth()-heading.getWidth(),0);
 
+	info= new GLabel("Game Information will be shown Here",0,0);
+	info.setFont("Serif-35-bold");
+	info.setColor(Color.red);
+	//		add(info,cover[0][0].getX(),this.getHeight()-info.getDescent());     NULL POINTER EXCEPTION
+	//added after addition of covers so that can be alligned with X of cover 0
+	
+	selectNum= new GLabel("Selection Indicator",0,this.getHeight());
+	selectNum.setFont("Serif-25");
+	selectNum.setColor(Color.red);
+	//		add(selectNum,cover[0][0].getX(),this.getHeight()-info.getDescent());     NULL POINTER EXCEPTION
+	
+	
+	remaining= new GLabel("Remaining Rolls",0,this.getHeight());
+	remaining.setFont("Serif-25");
+	remaining.setColor(Color.red);
+	//		add(remaining,cover[0][0].getX(),this.getHeight()-info.getDescent());     NULL POINTER EXCEPTION
+	
+	
+	
+	
+	rollButton = new GImage("file:///E:/work_space/JAVA/yahtzee/images/roll2.png");
+	rollButton.setSize(2*diceDim,1.75*diceDim);
+	add(rollButton,this.getWidth()/2-rollButton.getWidth()/2,0);
+	
+	rollButton = new GImage("file:///E:/work_space/JAVA/yahtzee/images/roll1.png");
+	rollButton.setSize(2*diceDim,1.8*diceDim);
+	add(rollButton,this.getWidth()/2-rollButton.getWidth()/2,0);
+	rollButton.setVisible(false);
+	
+	
+	addMouseListeners();	
+for(int i=0;i<5;i++)
+{
+diceRaw[i][0]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/0.png");
+diceRaw[i][1]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/1.png");
+diceRaw[i][2]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/2.png");
+diceRaw[i][3]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/3.png");
+diceRaw[i][4]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/4.png");
+diceRaw[i][5]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/5.png");
+diceRaw[i][6]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/6.png");
+}
 double coverW=windowW/5;
 
 double y=0,x=0;
 for(int i=0;i<5;i++)		
 {	
-	dice[i]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/3.png");	
-	dice[i].setSize(windowW/20,windowW/20);
-	y=y+2*dice[0].getHeight()/1.25;
-	x=dice[0].getWidth();
-	add(dice[i],x,y);
-	
+	dice[i]=new GImage("file:///E:/work_space/JAVA/yahtzee/images/0.png");	
+	dice[i].setSize(diceDim,diceDim);
+	y=y+upMargin/1.25;  // Upper Margin for dice
+	x=leftMargin;           // Left Margin
+	add(dice[i],x,y);	
 }
+
 x=windowW/4;
-y=2*dice[0].getHeight();
+y=upMargin;
 
 
 // Making First Column
@@ -74,9 +161,8 @@ for(int i=0;i<18;i++)
 {
 	int j=0;
 	
-	score[i][j]=new GLabel("Large",x-30,y);
+	score[i][j]=new GLabel("Large",x-30,y); // -30 used just to increase the right indent of the text 
 	score[i][j].setColor(Color.BLUE);
-	//score[i][j].sendToFront();
 	score[i][j].setFont("Serif-20");
 	add(score[i][j]);
 	
@@ -84,7 +170,7 @@ for(int i=0;i<18;i++)
 	
 	cover[i][j] = new GRect(score[i][j].getWidth(),score[i][j].getHeight());
 	cover[i][j].setSize(coverW,score[i][j].getHeight());
-	double subs =(cover[i][j].getWidth()-score[i][j].getWidth())/2;
+	double subs =(cover[i][j].getWidth()-score[i][j].getWidth())/2; // so that the text can be center alligned in the cover
 	//cover[i][j].sendBackward();
 	add(cover[i][j],x-subs,y-score[i][j].getHeight()+score[i][j].getDescent());
 	x=x+score[i][j].getWidth()+10;
@@ -97,7 +183,7 @@ x=windowW/4;
 // making First Row
 
 x=windowW/5+cover[0][0].getWidth();
-y=2*dice[0].getHeight();
+y=upMargin;
 
 for(int j=1;j<playerName.length+1;j++)
 {
@@ -196,13 +282,19 @@ score[i][j].setColor(Color.WHITE);
 score[i][j].setFont("Serif-20-BOLD");
 }}}
 
+// Ading Info Labels
+//add(info,cover[0][0].getX()+20,this.getHeight()-info.getDescent()); // 20 is margin to seperate from previous label
+add(info,0,upMargin/2); // 20 is margin to seperate from previous label
+
+add(selectNum,cover[0][0].getX(),cover[0][0].getY()-selectNum.getDescent());
+add(remaining,0,this.getHeight()-selectNum.getDescent());
 return 1;
 }
 
 private String[] userInfo()
 {
 	// Entering player Data number and names
-	int playerNum=261151; // \must lie from 1-4
+	int playerNum=261151; // \must lie from 1-4 // given a random value which user should not eneter otherwise BAD THINGS HAPPEN
 	while(true)
 	{
 	String msg="Please Enter number of players";
@@ -217,7 +309,7 @@ private String[] userInfo()
 	if(playerNum>=2 && playerNum<5)
 		break;
 	else if(playerNum==261151)
-		JOptionPane.showMessageDialog(null, "Please Enter a valid integer value", "Error", JOptionPane.PLAIN_MESSAGE, null);
+	JOptionPane.showMessageDialog(null, "Please Enter a valid integer value", "Error", JOptionPane.PLAIN_MESSAGE, null);
 	else if(playerNum<2)
 	JOptionPane.showMessageDialog(null, "This game cant be played with less than two players", "Error", JOptionPane.PLAIN_MESSAGE, null);
 	else if(playerNum>=5)
@@ -230,12 +322,173 @@ private String[] userInfo()
 	for(int i=0;i<playerNum;i++)
 	{
 	playerName[i]=JOptionPane.showInputDialog(null,"Enter name : "+(i+1));
+	
+	if(playerName[i].equalsIgnoreCase(""))
+		playerName[i]="Player "+(i+1);
+	
 	if(playerName[i].length() > 60/playerNum)
 	playerName[i]=playerName[i].substring(0,60/playerNum);
 	}
 
 return playerName;	
 }// user info method ends
+
+private int[] rollnSelect(int num)
+{
+int diceValue[]=new int[5];
+
+ArrayList<Integer> diceNum = new ArrayList<Integer>();
+
+diceNum=selectDice(num);
+diceValue=roll(diceNum);
+
+
+return diceValue;
+}// RollDice function ends
+
+private ArrayList selectDice(int roll)
+{
+
+ArrayList<Integer> diceNum = new ArrayList<Integer>();	
+
+if(roll==1)
+{
+	selectNum.setLabel("Selecting All");
+	int dx=2;
+	int dy=0;
+	for(int k=0;k<5;k++)
+	{
+		if(dice[k].getX()<leftMargin+40) // To Make sure that at every players turn only those dice should move which are already on the left 
+		{
+			for(int i=0;i<40;i++)
+			{
+				dice[k].move(dx,dy);
+				pause(5);
+			}
+		}
+	}
+}// Object inside this loop is a dice	
+
+
+
+for(int i=0;i<5;i++)
+{
+if(dice[i].getX()>diceDim && !diceNum.contains(i)) // Dice is on right side and dice value or its a first roll and value is not in the list = add value
+	diceNum.add(i);
+if(dice[i].getX()<=diceDim && diceNum.contains(i))
+	diceNum.remove(i);
+}
+selectNum.setLabel("No. Of Selections : "+diceNum.size());
+return diceNum;
+}
+
+private int[] roll(ArrayList diceNumber)
+{
+	int diceValue[]=new int[5];
+	double x=0,y=0; // For storing positions of dice
+	RandomGenerator random = RandomGenerator.getInstance();
+	
+	ArrayList<Integer> diceNum = new ArrayList<Integer>();
+	diceNum=diceNumber;
+	
+	for(int rep=0;rep<100;rep++) // To Animate 
+	{
+		pause(15);
+		for(int i:diceNum)		
+		{	
+		x=dice[i].getX();
+		y=dice[i].getY();
+		
+		int k = random.nextInt(1,6);
+		diceValue[i]=k;
+		remove(dice[i]);
+		//JOptionPane.showMessageDialog(null, "Removed dice " +i);
+		//pause(100);
+		dice[i]=diceRaw[i][k];	
+		dice[i].setSize(diceDim,diceDim);
+		add(dice[i],x,y);		
+		//JOptionPane.showMessageDialog(null, "Added dice " +i);
+		}
+	}
+rolling=false;
+return diceValue;
+}
+
+private void moveDice()
+{
+	if(selected.getX()>leftMargin)
+	{
+		dx=-2;
+		dy=0;	
+	}
+	else
+	{
+		dx=2;
+		dy=0;
+	}
+	for(int i=0;i<40;i++)
+	{
+		selected.move(dx,dy);
+		pause(5);
+	}	
+moving=false;
+selected=null;
+
+// Checking current Num od ices selected
+int number=0;
+for(int i=0;i<5;i++)
+{
+	
+if(dice[i].getX()>diceDim )
+	number++;
+}
+selectNum.setLabel("No. Of Selections : "+number);
+
+}
+
+public void mousePressed(MouseEvent event)
+{
+Boolean moved=false;
+
+
+GObject obj=null;
+if(getElementAt(event.getX(),event.getY())!=null && !moving)
+{
+obj=getElementAt(event.getX(),event.getY());
+if((obj.equals(dice[0])) || (obj.equals(dice[1])) || (obj.equals(dice[2])) || (obj.equals(dice[3])) || (obj.equals(dice[4])) )
+{
+	selected=obj;
+	moving=true;
+	
+}// Object inside this loop is a dice
+
+else if(obj.equals(rollButton))
+{
+	rolling=true;
+}
+
+}
+}
+
+public void mouseMoved(MouseEvent event)
+{
+if(getElementAt(event.getX(),event.getY())!=null)
+{
+	GObject obj = getElementAt(event.getX(),event.getY());
+	
+	if(obj==rollButton)
+		rollButton.setVisible(true);
+	else
+		rollButton.setVisible(false);
+
+
+}
+else
+	rollButton.setVisible(false); // So that as soon as mouse shows null also button one is restored
+}
+
+
+
 
 }//class yethzee front ends
 
