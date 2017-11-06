@@ -22,6 +22,9 @@ GImage dice[]=new GImage[5];
 GImage diceRaw[][]=new GImage[5][7];
 GImage rollButton;
 GObject selected=null;
+GRect cover[][];
+GLabel score[][];
+ArrayList<String> usedList = new ArrayList<String>(); 
 
 int windowH=640,windowW=1340;
 double diceDim=windowW/20;	
@@ -29,7 +32,11 @@ double leftMargin=diceDim;
 double upMargin=2*diceDim; // Howevr upMargin for dice is 2*diceDim/1.25
 boolean rolling=false; // Indicates thta roll button is clicked
 boolean moving=false;  // indicates that move dice is initisated
+boolean scoreLocked=false;
+boolean looking=false;
 int dx=2,dy=0;
+int precon;
+String pretext="00";
 
 public void run()
 {
@@ -42,12 +49,16 @@ this.setBackground(Color.green);
 
 
 String playerName[]=userInfo();
-//int diceNum[] = new int[5]; 
-GLabel score[][]=new GLabel[18][playerName.length+1];
-GRect cover[][]=new GRect[18][playerName.length+1];
+int diceValue[]=null; 
+score=new GLabel[18][playerName.length+1];
+cover=new GRect[18][playerName.length+1];
 
 setup(playerName,score,cover);
+
+for(int turn=0;turn<3*playerName.length;turn++)
+{
 for(int player=0;player<playerName.length;player++)
+
 {
 	JOptionPane.showMessageDialog(null,playerName[player]+" : Its Your Roll");
 	int rollNum=1;
@@ -58,7 +69,7 @@ while(rollNum<=3)
 	
 if(rolling)
 {
-rollnSelect(rollNum);
+diceValue=rollnSelect(rollNum);
 rollNum++;
 }
 
@@ -76,15 +87,46 @@ else
 	info.setLabel("Select the dices and press ROLL button");
 
 remaining.setLabel("	Rolls Remaining : "+(4-rollNum));
-}// while loop
-JOptionPane.showMessageDialog(null,"Well Played : "+playerName[player]);
-}// PLayer loop	
 
+//Code for assigning score
+	if(scoreLocked && rollNum!=1)
+	{
+	rollNum=assignScore(playerName,diceValue,player+1,rollNum);
+	scoreLocked=false;
+	}
+	else if(scoreLocked && rollNum==1)
+	{
+		JOptionPane.showMessageDialog(null,"You haven't rolled yet "+playerName[player]);
+		scoreLocked=false;
+	}
+
+// Code for glance
+	
+	if(looking && rollNum!=1)
+	{
+	rollNum=glance(playerName,diceValue,player+1,rollNum);
+	looking=false;
+	}
+	else if(looking && rollNum==1)
+	{
+		//JOptionPane.showMessageDialog(null,"You haven't rolled yet "+playerName[player]);
+		looking=false;
+	}
+
+
+}// while loop
+
+
+
+
+//JOptionPane.showMessageDialog(null,"Well Played : "+playerName[player]);
+}// PLayer loop	
+}
 /*
 rollDice();
 selectDice();
 selectDice();
-assignScore();
+
 */
 
 	
@@ -171,8 +213,8 @@ for(int i=0;i<18;i++)
 	cover[i][j] = new GRect(score[i][j].getWidth(),score[i][j].getHeight());
 	cover[i][j].setSize(coverW,score[i][j].getHeight());
 	double subs =(cover[i][j].getWidth()-score[i][j].getWidth())/2; // so that the text can be center alligned in the cover
-	//cover[i][j].sendBackward();
 	add(cover[i][j],x-subs,y-score[i][j].getHeight()+score[i][j].getDescent());
+	cover[i][j].sendBackward();
 	x=x+score[i][j].getWidth()+10;
 
 
@@ -203,7 +245,7 @@ cover[i][j] = new GRect(width,score[i][j].getHeight());
 double subs =(cover[i][j].getWidth()-score[i][j].getWidth())/2;
 cover[i][j].sendBackward();
 add(cover[i][j],x,y-score[i][j].getHeight()+score[i][j].getDescent());
-
+cover[i][j].sendBackward();
 }
 
 // Adding Score Values
@@ -224,9 +266,8 @@ for(int j=1;j<playerName.length+1;j++)
 	y=cover[i][j-1].getY();
 	cover[i][j] = new GRect(width,score[i][j].getHeight());
 	double subs =(cover[i][j].getWidth()-score[i][j].getWidth())/2;
-	cover[i][j].sendBackward();
 	add(cover[i][j],x,y);
-	
+	cover[i][j].sendBackward();
 }
 }
 
@@ -432,7 +473,6 @@ private void moveDice()
 		pause(5);
 	}	
 moving=false;
-selected=null;
 
 // Checking current Num od ices selected
 int number=0;
@@ -446,15 +486,272 @@ selectNum.setLabel("No. Of Selections : "+number);
 
 }
 
+private int assignScore(String playerName[],int diceValue[],int cp,int roll)
+{
+int con=0;
+int newRoll=roll;
+ArrayList<Integer> ignore = new ArrayList<Integer>(); 
+ignore.add(0);
+ignore.add(7);
+ignore.add(8);
+ignore.add(16);
+ignore.add(17);
+
+
+for(con=0;con<18;con++)
+	{
+		if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
+		{
+		cover[con][cp].setFilled(true);
+		cover[con][cp].setFillColor(Color.DARK_GRAY);
+		usedList.add(playerName[cp-1]+con);
+		newRoll=4;
+	break;
+		}	
+	}// fFor loop ends	
+if(newRoll==4)
+updateScore(con,cp,diceValue,false);
+return newRoll;
+}// Assign score end
+
+private int glance(String playerName[],int diceValue[],int cp,int roll)
+{
+int con=0;
+int newRoll=roll;
+
+ArrayList<Integer> ignore = new ArrayList<Integer>(); 
+ignore.add(0);
+ignore.add(7);
+ignore.add(8);
+ignore.add(16);
+ignore.add(17);
+
+
+for(con=0;con<18;con++)
+	{
+		if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
+		{
+		cover[con][cp].setFilled(true);
+		cover[con][cp].setFillColor(Color.GRAY);
+		
+		if(precon-con!=0)
+			{
+			if(precon!=0)
+			{
+			cover[precon][cp].setFilled(false);
+			score[precon][cp].setLabel("00");
+			}
+			}
+		
+			
+		
+		precon=con;	
+		
+		//newRoll=4;
+	break;
+		}	
+	}// fFor loop ends	
+//if(newRoll==4)
+if(con<18)
+updateScore(con,cp,diceValue,true);
+
+return newRoll;
+}// Assign score end
+
+private void updateScore(int con,int cp,int diceValue[],boolean check)
+{
+int number[]=new int[5];
+String previous="";
+previous=previous+score[con][cp].getLabel();
+int ones=0,twos=0,threes=0,fours=0,fives=0,sixes=0;	
+	for(int i=0;i<5;i++)
+	{
+	if(dice[i]==diceRaw[i][1])
+		{
+		number[i]=1;
+		ones++;
+		}
+	if(dice[i]==diceRaw[i][2])
+		{
+		number[i]=2;
+		twos++;
+		}
+	if(dice[i]==diceRaw[i][3])
+		{
+		number[i]=3;
+		threes++;
+		}
+	if(dice[i]==diceRaw[i][4])
+		{
+		number[i]=4;
+		fours++;
+		}
+	if(dice[i]==diceRaw[i][5])
+		{
+		number[i]=5;
+		fives++;
+		}
+	if(dice[i]==diceRaw[i][6])
+		{
+		number[i]=6;
+		sixes++;	
+		}
+	}
+	
+boolean twoKind 	= 	(ones>=2 || twos>=2 || threes>=2 || fours>=2 || fives>=2 || sixes>=2);
+boolean threeKind 	=	(ones>=3 || twos>=3 || threes>=3 || fours>=3 || fives>=3 || sixes>=3);
+boolean fourKind 	= 	(ones>=4 || twos>=4 || threes>=4 || fours>=4 || fives>=4 || sixes>=4);
+boolean fiveKind 	= 	(ones>=4 || twos>=4 || threes>=4 || fours>=4 || fives>=4 || sixes>=4);
+boolean allKind 	= 	(ones>=5 || twos>=5 || threes>=5 || fours>=5 || fives>=5 || sixes>=5);
+boolean smallStraight=false,largeStraight=false;
+
+//to check values of Three and four of a kind
+
+	
+
+
+
+// To check small and large straight
+int temp=0,pile=0,max=0;
+
+int arr[]= {0,0,0,0,0,0};
+for(int k=1;k<=6;k++)
+{
+for(int i=0;i<5;i++)
+{
+	if(number[i]==k)
+		arr[k-1]=k;
+}
+}
+
+for(int i=0;i<6;i++)
+{
+	if(arr[i]!=0)
+		pile++;
+	else
+	{
+		if(max<pile)
+		max=pile;
+		pile=0;
+	}
+}
+
+if(max>=4)
+{
+largeStraight=true;
+smallStraight=true;
+}
+else if(max==3)
+{
+smallStraight=true;	
+}
+
+
+	switch(con)
+	{
+		case 1:
+//		ones
+				score[con][cp].setLabel(""+ones);	
+		break;
+		
+		case 2:
+//		Twos
+				score[con][cp].setLabel(""+twos*2);	
+		break;
+		
+		case 3:
+//		Threes
+				score[con][cp].setLabel(""+threes*3);	
+		break;
+		
+		case 4:
+//		Fours
+				score[con][cp].setLabel(""+fours*4);	
+			
+		break;
+		
+		case 5:
+//		Fives
+				score[con][cp].setLabel(""+fives*5);	
+			
+		break;
+		
+		case 6:
+//		Sixes
+				score[con][cp].setLabel(""+sixes*6);	
+			break;
+		
+		case 9:
+//		Three of a kind
+			if(threeKind)
+			{
+				int sum=0;
+				for(int i=0;i<5;i++)
+					sum+=number[i];
+				score[con][cp].setLabel(""+sum);
+			}
+				
+		break;
+		
+		case 10:
+//		Four of a kind
+			if(threeKind)
+			{
+				int sum=0;
+				for(int i=0;i<5;i++)
+					sum+=number[i];
+				score[con][cp].setLabel(""+sum);
+			}
+		break;
+		
+		case 11:
+//		Full House
+			if(threeKind && twoKind)
+			score[con][cp].setLabel(""+25);
+		break;
+		
+		case 12:
+//		Small Straight
+			if((smallStraight || largeStraight))
+			score[con][cp].setLabel(""+30);
+		break;
+		
+		case 13:
+	//	Large Straight
+			if(largeStraight)
+			score[con][cp].setLabel(""+40);
+		break;
+		
+		case 14:
+	//	Yahtzee
+			if(fiveKind)
+			score[con][cp].setLabel(""+50);
+		break;
+		
+		case 15:
+	//	Chance
+				int sum=0;
+				for(int i=0;i<5;i++)
+					sum+=number[i];
+				score[con][cp].setLabel(""+sum);
+		break;
+	}	
+	
+	
+	
+}
+
 public void mousePressed(MouseEvent event)
 {
-Boolean moved=false;
+
 
 
 GObject obj=null;
 if(getElementAt(event.getX(),event.getY())!=null && !moving)
 {
 obj=getElementAt(event.getX(),event.getY());
+int x=event.getX();
+int y= event.getY();
 if((obj.equals(dice[0])) || (obj.equals(dice[1])) || (obj.equals(dice[2])) || (obj.equals(dice[3])) || (obj.equals(dice[4])) )
 {
 	selected=obj;
@@ -466,27 +763,48 @@ else if(obj.equals(rollButton))
 {
 	rolling=true;
 }
+else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
+{
+	selected=obj;
+	scoreLocked=true;
+}
 
 }
 }
 
 public void mouseMoved(MouseEvent event)
 {
-if(getElementAt(event.getX(),event.getY())!=null)
+	GObject obj=null;
+	int x=event.getX();
+	int y= event.getY();
+	if(getElementAt(event.getX(),event.getY())!=null)
 {
-	GObject obj = getElementAt(event.getX(),event.getY());
+	 obj = getElementAt(event.getX(),event.getY());
 	
 	if(obj==rollButton)
 		rollButton.setVisible(true);
-	else
-		rollButton.setVisible(false);
-
-
+	
+	
+	else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
+	{
+		
+		selected=obj;
+		looking=true;
+	}
 }
+
+
 else
 	rollButton.setVisible(false); // So that as soon as mouse shows null also button one is restored
-}
+	
 
+
+
+
+
+
+
+}
 
 
 
