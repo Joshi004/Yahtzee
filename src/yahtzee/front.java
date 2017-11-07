@@ -39,14 +39,9 @@ int precon;
 String pretext="00";
 
 public void run()
-{
-Scanner input=new Scanner(System.in);
-
-	
+{	
 this.setSize(windowW,windowH);
 this.setBackground(Color.green);
-
-
 
 String playerName[]=userInfo();
 int diceValue[]=null; 
@@ -61,16 +56,23 @@ for(int player=0;player<playerName.length;player++)
 
 {
 	JOptionPane.showMessageDialog(null,playerName[player]+" : Its Your Roll");
+	scoreLocked=false;
+	rolling=false;
 	int rollNum=1;
 
-while(rollNum<=3)
+while(rollNum<=3 || ( !scoreLocked))
 {
 
 	
 if(rolling)
 {
-diceValue=rollnSelect(rollNum);
+if(rollNum<=3)
+{diceValue=rollnSelect(rollNum);
 rollNum++;
+rolling=false;
+}
+
+
 }
 
 if(moving && rollNum>1)
@@ -89,9 +91,11 @@ else
 remaining.setLabel("	Rolls Remaining : "+(4-rollNum));
 
 //Code for assigning score
+
 	if(scoreLocked && rollNum!=1)
 	{
 	rollNum=assignScore(playerName,diceValue,player+1,rollNum);
+	if(rollNum<=3)
 	scoreLocked=false;
 	}
 	else if(scoreLocked && rollNum==1)
@@ -109,7 +113,6 @@ remaining.setLabel("	Rolls Remaining : "+(4-rollNum));
 	}
 	else if(looking && rollNum==1)
 	{
-		//JOptionPane.showMessageDialog(null,"You haven't rolled yet "+playerName[player]);
 		looking=false;
 	}
 
@@ -558,6 +561,8 @@ updateScore(con,cp,diceValue,true);
 return newRoll;
 }// Assign score end
 
+
+
 private void updateScore(int con,int cp,int diceValue[],boolean check)
 {
 int number[]=new int[5];
@@ -777,7 +782,7 @@ public void mouseMoved(MouseEvent event)
 	GObject obj=null;
 	int x=event.getX();
 	int y= event.getY();
-	if(getElementAt(event.getX(),event.getY())!=null)
+	if(getElementAt(event.getX(),event.getY())!=null && !rolling &&  !moving)
 {
 	 obj = getElementAt(event.getX(),event.getY());
 	
