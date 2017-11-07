@@ -50,7 +50,7 @@ cover=new GRect[18][playerName.length+1];
 
 setup(playerName,score,cover);
 
-for(int turn=0;turn<3*playerName.length;turn++)
+while(usedList.size()<playerName.length*13)
 {
 for(int player=0;player<playerName.length;player++)
 
@@ -532,18 +532,21 @@ ignore.add(17);
 
 for(con=0;con<18;con++)
 	{
-		if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
+		if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  || (selected.equals(cover[con][cp])) || (selected.equals(score[con][cp])) ))
 		{
 		cover[con][cp].setFilled(true);
 		cover[con][cp].setFillColor(Color.GRAY);
+		cover[con][0].setFilled(true);
+		cover[con][0].setFillColor(Color.yellow);
 		
-		if(precon-con!=0)
-			{
-			if(precon!=0)
-			{
+		
+		
+		
+		if(precon-con!=0 && !usedList.contains(playerName[cp-1]+precon) && !ignore.contains(precon))
+			{		
 			cover[precon][cp].setFilled(false);
-			score[precon][cp].setLabel("00");
-			}
+			cover[precon][0].setFilled(false);
+			score[precon][cp].setLabel("00");	
 			}
 		
 			
@@ -554,14 +557,12 @@ for(con=0;con<18;con++)
 	break;
 		}	
 	}// fFor loop ends	
-//if(newRoll==4)
 if(con<18)
+if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
 updateScore(con,cp,diceValue,true);
 
 return newRoll;
 }// Assign score end
-
-
 
 private void updateScore(int con,int cp,int diceValue[],boolean check)
 {
@@ -606,8 +607,8 @@ int ones=0,twos=0,threes=0,fours=0,fives=0,sixes=0;
 boolean twoKind 	= 	(ones>=2 || twos>=2 || threes>=2 || fours>=2 || fives>=2 || sixes>=2);
 boolean threeKind 	=	(ones>=3 || twos>=3 || threes>=3 || fours>=3 || fives>=3 || sixes>=3);
 boolean fourKind 	= 	(ones>=4 || twos>=4 || threes>=4 || fours>=4 || fives>=4 || sixes>=4);
-boolean fiveKind 	= 	(ones>=4 || twos>=4 || threes>=4 || fours>=4 || fives>=4 || sixes>=4);
-boolean allKind 	= 	(ones>=5 || twos>=5 || threes>=5 || fours>=5 || fives>=5 || sixes>=5);
+boolean fiveKind 	= 	(ones>=5 || twos>=5 || threes>=5 || fours>=5 || fives>=5 || sixes>=45);
+
 boolean smallStraight=false,largeStraight=false;
 
 //to check values of Three and four of a kind
@@ -742,7 +743,41 @@ smallStraight=true;
 		break;
 	}	
 	
-	
+
+
+	if(!check)
+	{
+		int ls=Integer.parseInt(score[7][cp].getLabel());
+		int us=Integer.parseInt(score[16][cp].getLabel());
+		int bonus=Integer.parseInt(score[8][cp].getLabel());
+		int total=Integer.parseInt(score[17][cp].getLabel());
+		
+				if(con<7 && con>0)
+			{
+			int x=Integer.parseInt(score[7][cp].getLabel());
+			int y=Integer.parseInt(score[con][cp].getLabel());
+			us=x+y;
+			score[7][cp].setLabel(""+us);
+			}
+		if(con>6 && con<16)
+			{
+			int x=Integer.parseInt(score[16][cp].getLabel());
+			int y=Integer.parseInt(score[con][cp].getLabel());
+			ls=x+y;	
+			score[16][cp].setLabel(""+ls);
+			}
+		if(ls>62)
+			bonus=35;
+		score[8][cp].setLabel(""+bonus);
+		
+		total=(Integer.parseInt(score[7][cp].getLabel()))+(Integer.parseInt(score[16][cp].getLabel()))+bonus;
+		score[17][cp].setLabel(""+total);
+		
+		//score[7][cp].setLabel(""+us);
+		//score[8][cp].setLabel(""+bonus);
+		//score[16][cp].setLabel(""+ls);
+		//score[17][cp].setLabel(""+total);
+	}
 	
 }
 
@@ -792,10 +827,12 @@ public void mouseMoved(MouseEvent event)
 	
 	else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
 	{
-		
+		rollButton.setVisible(false);
 		selected=obj;
 		looking=true;
 	}
+	else
+		rollButton.setVisible(false);
 }
 
 
