@@ -16,35 +16,13 @@ import acm.util.*;
 public class front extends GraphicsProgram
 {
 
-	
-GLabel info,selectNum,remaining;
-GImage dice[]=new GImage[5];
-GImage diceRaw[][]=new GImage[5][7];
-GImage rollButton;
-GObject selected=null;
-GRect cover[][];
-GLabel score[][];
-ArrayList<String> usedList = new ArrayList<String>(); 
-
-int windowH=640,windowW=1340;
-double diceDim=windowW/20;	
-double leftMargin=diceDim;
-double upMargin=2*diceDim; // Howevr upMargin for dice is 2*diceDim/1.25
-boolean rolling=false; // Indicates thta roll button is clicked
-boolean moving=false;  // indicates that move dice is initisated
-boolean scoreLocked=false;
-boolean looking=false;
-int dx=2,dy=0;
-int precon;
-String pretext="00";
-
 public void run()
 {	
 this.setSize(windowW,windowH);
 this.setBackground(Color.green);
 
 String playerName[]=userInfo();
-int diceValue[]=null; 
+ 
 score=new GLabel[18][playerName.length+1];
 cover=new GRect[18][playerName.length+1];
 
@@ -56,86 +34,13 @@ for(int player=0;player<playerName.length;player++)
 
 {
 	JOptionPane.showMessageDialog(null,playerName[player]+" : Its Your Roll");
-	scoreLocked=false;
-	rolling=false;
-	int rollNum=1;
+	play(playerName,player);
 
-while(rollNum<=3 || ( !scoreLocked))
-{
-
-	
-if(rolling)
-{
-if(rollNum<=3)
-{diceValue=rollnSelect(rollNum);
-rollNum++;
-rolling=false;
-}
-
-
-}
-
-if(moving && rollNum>1)
-moveDice();
-else if(rollNum==1)
-moving=false; // If this is not done At every players first turn if dice is selected before roll button then roll button wont work
-
-if(rollNum==1)
-	{
-	info.setLabel("Press ROLL to roll all dices");
-	selectNum.setLabel("SELECTION DISABLED");
-	}
-else
-	info.setLabel("Select the dices and press ROLL button");
-
-remaining.setLabel("	Rolls Remaining : "+(4-rollNum));
-
-//Code for assigning score
-
-	if(scoreLocked && rollNum!=1)
-	{
-	rollNum=assignScore(playerName,diceValue,player+1,rollNum);
-	if(rollNum<=3)
-	scoreLocked=false;
-	}
-	else if(scoreLocked && rollNum==1)
-	{
-		JOptionPane.showMessageDialog(null,"You haven't rolled yet "+playerName[player]);
-		scoreLocked=false;
-	}
-
-// Code for glance
-	
-	if(looking && rollNum!=1)
-	{
-	rollNum=glance(playerName,diceValue,player+1,rollNum);
-	looking=false;
-	}
-	else if(looking && rollNum==1)
-	{
-		looking=false;
-	}
-
-
-}// while loop
-
-
-
-
-//JOptionPane.showMessageDialog(null,"Well Played : "+playerName[player]);
 }// PLayer loop	
-}
-/*
-rollDice();
-selectDice();
-selectDice();
 
-*/
-
-	
+}// Total number of turns
+JOptionPane.showMessageDialog(null,"GAME OVER");
 }// Main ends 	
-
-
 
 private int setup(String playerName[],GLabel score[][],GRect cover[][])
 {
@@ -377,16 +282,78 @@ private String[] userInfo()
 return playerName;	
 }// user info method ends
 
-private int[] rollnSelect(int num)
+private void play(String playerName[],int player)
+{
+scoreLocked=false;
+rolling=false;
+int rollNum=1;
+int diceValue[]=null;
+	
+	while(rollNum<=3 || ( !scoreLocked)  || (rollNum==4 && scoreLocked) )
+	{
+		
+		if(rolling && rollNum<=4)
+		{
+		diceValue=rollnSelect(rollNum);
+		if(rollNum<=3) // Because we dont want Remaing rolls to go down below 0 moreover it will make the value of rollNum 5 for which the code is not designed because there is a case for rollNum 4 in roll method where it doesnt actualy rolls but just eturns the values of existing dices 
+		rollNum++;
+		rolling=false;
+		}
+
+		if(moving && rollNum>1)
+		moveDice();
+		else if(rollNum==1)
+		moving=false; // If this is not done At every players first turn if dice is selected before roll button then roll button wont work
+
+//Code for assigning score
+		if((scoreLocked) && rollNum!=1)
+		{
+		rollNum=assignScore(playerName,diceValue,player+1,rollNum);
+		if(rollNum<=3)
+			scoreLocked=false;
+		
+		}
+			else if(scoreLocked && rollNum==1)
+			{
+			JOptionPane.showMessageDialog(null,"You haven't rolled yet "+playerName[player]);
+			scoreLocked=false;
+			}
+
+// Code for glance
+	
+		if(looking && rollNum!=1)
+		{
+		rollNum=glance(playerName,diceValue,player+1,rollNum);
+		looking=false;
+		}
+			else if(looking && rollNum==1)
+			{
+			looking=false;
+			}
+
+// Code For setting Up The Labels	
+	
+		if(rollNum==1)
+		{
+		info.setLabel("Press ROLL to roll all dices");
+		selectNum.setLabel("SELECTION DISABLED");
+		}
+			else
+			info.setLabel("Select the dices and press ROLL button");
+
+remaining.setLabel("	Rolls Remaining : "+(4-rollNum));
+
+}// while loop
+	
+
+}
+
+private int[] rollnSelect(int rollNum)
 {
 int diceValue[]=new int[5];
-
 ArrayList<Integer> diceNum = new ArrayList<Integer>();
-
-diceNum=selectDice(num);
-diceValue=roll(diceNum);
-
-
+diceNum=selectDice(rollNum);
+diceValue=roll(diceNum,rollNum);
 return diceValue;
 }// RollDice function ends
 
@@ -395,7 +362,8 @@ private ArrayList selectDice(int roll)
 
 ArrayList<Integer> diceNum = new ArrayList<Integer>();	
 
-if(roll==1)
+// For First roll all dices must move to right simultaniously and automatically
+if(roll==1) 
 {
 	selectNum.setLabel("Selecting All");
 	int dx=2;
@@ -426,9 +394,11 @@ selectNum.setLabel("No. Of Selections : "+diceNum.size());
 return diceNum;
 }
 
-private int[] roll(ArrayList diceNumber)
+private int[] roll(ArrayList diceNumber,int rollNum)
 {
 	int diceValue[]=new int[5];
+	if(rollNum<=3)  // In main roll method is working till roll num 4 but it shouldnt actualy roll for 4 rather just return the existing dice values
+	{
 	double x=0,y=0; // For storing positions of dice
 	RandomGenerator random = RandomGenerator.getInstance();
 	
@@ -437,23 +407,34 @@ private int[] roll(ArrayList diceNumber)
 	
 	for(int rep=0;rep<100;rep++) // To Animate 
 	{
-		pause(15);
+		int rand,diceDelay=15;
+		pause(diceDelay);
 		for(int i:diceNum)		
 		{	
 		x=dice[i].getX();
 		y=dice[i].getY();
 		
-		int k = random.nextInt(1,6);
-		diceValue[i]=k;
+		rand = random.nextInt(1,6);
+		diceValue[i]=rand;
 		remove(dice[i]);
-		//JOptionPane.showMessageDialog(null, "Removed dice " +i);
-		//pause(100);
-		dice[i]=diceRaw[i][k];	
+		dice[i]=diceRaw[i][rand];	
 		dice[i].setSize(diceDim,diceDim);
 		add(dice[i],x,y);		
-		//JOptionPane.showMessageDialog(null, "Added dice " +i);
 		}
 	}
+	}
+	else 
+	{
+		for(int i=0;i<5;i++)
+		{
+			for(int raw=1;raw<=6;raw++)
+			{
+				if(dice[i].equals(diceRaw[i][raw]))
+					diceValue[i]=raw;
+			}
+		}
+	}
+	
 rolling=false;
 return diceValue;
 }
@@ -477,21 +458,20 @@ private void moveDice()
 	}	
 moving=false;
 
-// Checking current Num od ices selected
+// Code to check the number of dices that are selected
 int number=0;
 for(int i=0;i<5;i++)
-{
-	
+{	
 if(dice[i].getX()>diceDim )
 	number++;
 }
 selectNum.setLabel("No. Of Selections : "+number);
 
-}
+}// Move Dice Method End
 
 private int assignScore(String playerName[],int diceValue[],int cp,int roll)
 {
-int con=0;
+int con=0;  // Configuration or catagory
 int newRoll=roll;
 ArrayList<Integer> ignore = new ArrayList<Integer>(); 
 ignore.add(0);
@@ -501,19 +481,17 @@ ignore.add(16);
 ignore.add(17);
 
 
-for(con=0;con<18;con++)
+for(con=0;con<18;con++) // Getting in this loop means any configuration se selected that is not already in the selection list
 	{
 		if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
 		{
 		cover[con][cp].setFilled(true);
 		cover[con][cp].setFillColor(Color.DARK_GRAY);
 		usedList.add(playerName[cp-1]+con);
-		newRoll=4;
-	break;
+		newRoll=updateScore(con,cp,diceValue,newRoll,false);
+		break;
 		}	
 	}// fFor loop ends	
-if(newRoll==4)
-updateScore(con,cp,diceValue,false);
 return newRoll;
 }// Assign score end
 
@@ -533,76 +511,68 @@ ignore.add(17);
 for(con=0;con<18;con++)
 	{
 		if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  || (selected.equals(cover[con][cp])) || (selected.equals(score[con][cp])) ))
-		{
-		cover[con][cp].setFilled(true);
-		cover[con][cp].setFillColor(Color.GRAY);
-		cover[con][0].setFilled(true);
-		cover[con][0].setFillColor(Color.yellow);
+			{
+			cover[con][cp].setFilled(true);
+			cover[con][cp].setFillColor(Color.GRAY);
+			cover[con][0].setFilled(true);
+			cover[con][0].setFillColor(Color.yellow);
 		
-		
-		
-		
-		if(precon-con!=0 && !usedList.contains(playerName[cp-1]+precon) && !ignore.contains(precon))
-			{		
-			cover[precon][cp].setFilled(false);
-			cover[precon][0].setFilled(false);
-			score[precon][cp].setLabel("00");	
-			}
-		
-			
-		
-		precon=con;	
-		
-		//newRoll=4;
-	break;
-		}	
+				if(precon-con!=0 && !usedList.contains(playerName[cp-1]+precon) && !ignore.contains(precon))
+				{		
+				cover[precon][cp].setFilled(false);
+				cover[precon][0].setFilled(false);
+				score[precon][cp].setLabel("00");	
+				}	
+			precon=con;			
+			break;
+			}	
 	}// fFor loop ends	
-if(con<18)
-if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
-updateScore(con,cp,diceValue,true);
+if(con<18) // Otherwise gives array out of bound 18 exception
+	if(!ignore.contains(con) && !usedList.contains(playerName[cp-1]+con) && (selected.equals(cover[con][0]) || (selected.equals(score[con][0]))  ))
+		updateScore(con,cp,diceValue,newRoll,true);
 
 return newRoll;
 }// Assign score end
 
-private void updateScore(int con,int cp,int diceValue[],boolean check)
+private int updateScore(int con,int cp,int diceValue[],int newRoll,boolean check)
 {
 int number[]=new int[5];
 String previous="";
 previous=previous+score[con][cp].getLabel();
 int ones=0,twos=0,threes=0,fours=0,fives=0,sixes=0;	
 	for(int i=0;i<5;i++)
-	{
-	if(dice[i]==diceRaw[i][1])
 		{
-		number[i]=1;
-		ones++;
-		}
-	if(dice[i]==diceRaw[i][2])
-		{
-		number[i]=2;
-		twos++;
-		}
-	if(dice[i]==diceRaw[i][3])
-		{
-		number[i]=3;
-		threes++;
-		}
-	if(dice[i]==diceRaw[i][4])
-		{
-		number[i]=4;
-		fours++;
-		}
-	if(dice[i]==diceRaw[i][5])
-		{
-		number[i]=5;
-		fives++;
-		}
-	if(dice[i]==diceRaw[i][6])
-		{
-		number[i]=6;
-		sixes++;	
-		}
-	}
+		if(dice[i]==diceRaw[i][1])
+			{
+			number[i]=1;
+			ones++;
+			}
+		if(dice[i]==diceRaw[i][2])
+			{
+			number[i]=2;
+			twos++;
+			}
+		if(dice[i]==diceRaw[i][3])
+			{
+			number[i]=3;
+			threes++;
+			}
+		if(dice[i]==diceRaw[i][4])
+			{
+			number[i]=4;
+			fours++;
+			}
+		if(dice[i]==diceRaw[i][5])
+			{
+			number[i]=5;
+			fives++;
+			}
+		if(dice[i]==diceRaw[i][6])
+			{
+			number[i]=6;
+			sixes++;	
+			}
+		}// For loop ends For all five dices
 	
 boolean twoKind 	= 	(ones>=2 || twos>=2 || threes>=2 || fours>=2 || fives>=2 || sixes>=2);
 boolean threeKind 	=	(ones>=3 || twos>=3 || threes>=3 || fours>=3 || fives>=3 || sixes>=3);
@@ -611,139 +581,107 @@ boolean fiveKind 	= 	(ones>=5 || twos>=5 || threes>=5 || fours>=5 || fives>=5 ||
 
 boolean smallStraight=false,largeStraight=false;
 
-//to check values of Three and four of a kind
-
-	
-
-
-
 // To check small and large straight
 int temp=0,pile=0,max=0;
-
 int arr[]= {0,0,0,0,0,0};
-for(int k=1;k<=6;k++)
-{
-for(int i=0;i<5;i++)
-{
-	if(number[i]==k)
-		arr[k-1]=k;
-}
-}
 
-for(int i=0;i<6;i++)
-{
-	if(arr[i]!=0)
-		pile++;
-	else
-	{
-		if(max<pile)
-		max=pile;
-		pile=0;
-	}
-}
+	for(int k=1;k<=6;k++)
+		{
+		for(int i=0;i<5;i++)
+			{
+			if(number[i]==k)
+				arr[k-1]=k;
+			}
+		}
 
-if(max>=4)
-{
-largeStraight=true;
-smallStraight=true;
-}
-else if(max==3)
-{
-smallStraight=true;	
-}
+	for(int i=0;i<6;i++)
+		{
+		if(arr[i]!=0)
+			pile++;
+		else
+			{
+			if(max<pile)
+				max=pile;
+			pile=0;
+			}
+		}
+
+	if(max>=4)
+		{
+		largeStraight=true;
+		smallStraight=true;
+		}
+	else if(max==3)
+		smallStraight=true;	
+
 
 
 	switch(con)
 	{
 		case 1:
-//		ones
 				score[con][cp].setLabel(""+ones);	
 		break;
-		
 		case 2:
-//		Twos
 				score[con][cp].setLabel(""+twos*2);	
 		break;
-		
 		case 3:
-//		Threes
 				score[con][cp].setLabel(""+threes*3);	
 		break;
-		
 		case 4:
-//		Fours
 				score[con][cp].setLabel(""+fours*4);	
-			
 		break;
-		
 		case 5:
-//		Fives
 				score[con][cp].setLabel(""+fives*5);	
-			
 		break;
-		
 		case 6:
-//		Sixes
 				score[con][cp].setLabel(""+sixes*6);	
-			break;
-		
+		break;
 		case 9:
-//		Three of a kind
-			if(threeKind)
-			{
-				int sum=0;
-				for(int i=0;i<5;i++)
-					sum+=number[i];
-				score[con][cp].setLabel(""+sum);
-			}
-				
+				if(threeKind)
+					{
+					int sum=0;
+					for(int i=0;i<5;i++)
+						{
+						sum+=number[i];
+						}
+					score[con][cp].setLabel(""+sum);
+					}
 		break;
-		
 		case 10:
-//		Four of a kind
-			if(threeKind)
-			{
+			if(fourKind)
+				{
 				int sum=0;
 				for(int i=0;i<5;i++)
+					{
 					sum+=number[i];
+					}
 				score[con][cp].setLabel(""+sum);
-			}
+				}
 		break;
-		
 		case 11:
-//		Full House
 			if(threeKind && twoKind)
-			score[con][cp].setLabel(""+25);
+				score[con][cp].setLabel(""+25);
 		break;
-		
 		case 12:
-//		Small Straight
 			if((smallStraight || largeStraight))
-			score[con][cp].setLabel(""+30);
+				score[con][cp].setLabel(""+30);
 		break;
-		
 		case 13:
-	//	Large Straight
 			if(largeStraight)
-			score[con][cp].setLabel(""+40);
+				score[con][cp].setLabel(""+40);
 		break;
-		
 		case 14:
-	//	Yahtzee
 			if(fiveKind)
 			score[con][cp].setLabel(""+50);
 		break;
 		
 		case 15:
-	//	Chance
 				int sum=0;
 				for(int i=0;i<5;i++)
 					sum+=number[i];
 				score[con][cp].setLabel(""+sum);
 		break;
 	}	
-	
-
 
 	if(!check)
 	{
@@ -773,43 +711,35 @@ smallStraight=true;
 		total=(Integer.parseInt(score[7][cp].getLabel()))+(Integer.parseInt(score[16][cp].getLabel()))+bonus;
 		score[17][cp].setLabel(""+total);
 		
-		//score[7][cp].setLabel(""+us);
-		//score[8][cp].setLabel(""+bonus);
-		//score[16][cp].setLabel(""+ls);
-		//score[17][cp].setLabel(""+total);
+		newRoll=5; // It means that the Score is Updated and now no more rolls are required so change it to 4
 	}
-	
+	return newRoll;
 }
 
 public void mousePressed(MouseEvent event)
 {
-
-
-
 GObject obj=null;
 if(getElementAt(event.getX(),event.getY())!=null && !moving)
-{
-obj=getElementAt(event.getX(),event.getY());
-int x=event.getX();
-int y= event.getY();
-if((obj.equals(dice[0])) || (obj.equals(dice[1])) || (obj.equals(dice[2])) || (obj.equals(dice[3])) || (obj.equals(dice[4])) )
-{
-	selected=obj;
-	moving=true;
-	
-}// Object inside this loop is a dice
+	{
+	obj=getElementAt(event.getX(),event.getY());
+	int x=event.getX();
+	int y= event.getY();
+	if((obj.equals(dice[0])) || (obj.equals(dice[1])) || (obj.equals(dice[2])) || (obj.equals(dice[3])) || (obj.equals(dice[4])) )
+		{
+		selected=obj;
+		moving=true;
+		}// Object inside this loop is a dice
 
-else if(obj.equals(rollButton))
-{
-	rolling=true;
-}
-else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
-{
-	selected=obj;
-	scoreLocked=true;
-}
-
-}
+	else if(obj.equals(rollButton))
+		{
+		rolling=true;
+		}
+	else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
+		{
+		selected=obj;
+		scoreLocked=true;
+		}
+	}
 }
 
 public void mouseMoved(MouseEvent event)
@@ -818,57 +748,44 @@ public void mouseMoved(MouseEvent event)
 	int x=event.getX();
 	int y= event.getY();
 	if(getElementAt(event.getX(),event.getY())!=null && !rolling &&  !moving)
-{
-	 obj = getElementAt(event.getX(),event.getY());
+		{
+		obj = getElementAt(event.getX(),event.getY());
 	
-	if(obj==rollButton)
-		rollButton.setVisible(true);
+		if(obj==rollButton)
+			rollButton.setVisible(true);
 	
 	
-	else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
-	{
-		rollButton.setVisible(false);
-		selected=obj;
-		looking=true;
-	}
+		else if( x>=cover[0][0].getX()  &&  x<=cover[0][0].getX()+cover[0][0].getWidth()  &&  y>=cover[0][0].getY()  &&  y<=cover[17][0].getY()+cover[17][0].getWidth())
+			{
+			rollButton.setVisible(false);
+			selected=obj;
+			looking=true;
+			}
+		else
+			rollButton.setVisible(false);
+		}
+
+
 	else
-		rollButton.setVisible(false);
+		rollButton.setVisible(false); // So that as soon as mouse shows null also button one is restored
 }
 
 
-else
-	rollButton.setVisible(false); // So that as soon as mouse shows null also button one is restored
-	
+// Class variables fOr the game 
 
+GLabel info,selectNum,remaining,score[][];
+GImage dice[]=new GImage[5],rollButton,diceRaw[][]=new GImage[5][7];
+GObject selected=null;
+GRect cover[][];
 
+ArrayList<String> usedList = new ArrayList<String>(); 
+int windowH=640,windowW=1340,dx=0,dy=0,precon;
+double diceDim=windowW/20;	
+double leftMargin=diceDim,upMargin=2*diceDim;  // Howevr upMargin for dice is 2*diceDim/1.25
 
-
-
-
-
-}
-
+boolean rolling=false,moving=false,scoreLocked=false,looking; 
+//Indicate that different buttons are click like move dice or locking any score or roll dice so that corosponding functions can run in main 
 
 
 }//class yethzee front ends
 
-
-/*
-Five dice & 1-4 players
-
-configuration catagories 13 
-chance			-	sum of all values
-ones - six		-	sum of all corospondings 
-three of a kind-	sum of all
-four of a kind -	sum of all
-full house 	-	25
-small straight -	30
-large straight	-	40
-yahtzee 		-	50
- 
-if a player’s score for the upper section ends up totaling 63 or more, 
-that player is awarded a 35-point bonus on the next line. 
-The scores in the lower section of the scorecard are also added together to generate the entry labeled Lower Score. 
-The total score for each player is then computed by adding together the upper score, 
-the bonus (if any), and the lower score.
-*/
